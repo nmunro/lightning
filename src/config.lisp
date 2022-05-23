@@ -4,6 +4,8 @@
            #:make-config
            #:load-config
            #:save-config
+           #:add-project
+           #:remove-project
            #:path
            #:projects))
 
@@ -15,6 +17,12 @@
 
 (defun make-config (&key (projects nil projectsp))
   (make-instance 'config :projects projects))
+
+(defun add-project (project config)
+  nil)
+
+(defun remove-project (project config)
+  nil)
 
 (defun load-config ()
   (let ((config (make-config)))

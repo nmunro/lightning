@@ -1,13 +1,5 @@
-(defpackage lightning/projects
-  (:use :cl)
-  (:export #:project
-           #:template
-           #:page
-           #:name
-           #:path
-           #:pages
-           #:templates
-           #:make-project))
+:q
+(DEFPACKAG
 
 (in-package lightning/projects)
 
@@ -29,19 +21,17 @@
   (make-instance 'project :name name :path path :templates templates :pages pages))
 
 (defun project (action name &key (path nil pathp))
-  (let ((config (lightning/config:load-config)))
-    (cond
-      ((eq action :create)
-       (format nil "Creating Project ~A: ~A" name path)
-       (lightning/config:add-project (make-project name path '() '()) config)
-       (ensure-directories-exist path)) ; @TODO: Save a project to the config to get the below working
+  (cond
+    ((eq action :create)
+     (format nil "Creating Project ~A: ~A" name path)
+     (ensure-directories-exist path)) ; @TODO: Save a project to the config to get the below working
 
-      ((eq action :delete)
-       (format nil "Deleting Project ~A" name path)
-       (uiop:delete-directory-tree "" :validate t)) ; @TODO: This doesn't work yet
+    ((eq action :delete)
+     (format nil "Deleting Project ~A" name path)
+     (uiop:delete-directory-tree "" :validate t)) ; @TODO: This doesn't work yet
 
-      (t
-       (error "Unrecognised action")))))
+    (t
+     (error "Unrecognised action"))))
 
 (defun template (action project name &key (path nil pathp))
   (format nil "~A Template ~A in ~A from ~A" action name project path))
