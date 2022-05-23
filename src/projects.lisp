@@ -1,14 +1,13 @@
 (defpackage lightning/projects
   (:use :cl)
-  (:export #:create
-           #:project
-           #:make-project
-           #:make-template
-           #:make-page
+  (:export #:project
+           #:template
+           #:page
            #:name
            #:path
            #:pages
-           #:templates))
+           #:templates
+           #:make-project))
 
 (in-package lightning/projects)
 
@@ -26,35 +25,24 @@
 (defclass page (component)
   ())
 
-(defgeneric rm (object)
-  (:documentation "Removes an item"))
-
-(defmethod rm ((project project))
-  (format nil "Removing project: ~A" (name project)))
-
-(defmethod rm ((template template))
-  (format nil "Removing template: ~A" (name template)))
-
-(defmethod rm ((page page))
-  (format nil "Removing page: ~A" (name page)))
-
-(defgeneric create (object &rest args)
-  (:documentation "Creates an item"))
-
-(defmethod create ((project project) &rest args)
-  (format t "Creating project: ~A~%" (name project)))
-
-(defmethod create ((template template) &rest args)
-  (format t "Creating template: ~A~%" (name template)))
-
-(defmethod create ((page page) &rest args)
-  (format t "Creating page: ~A~%" (name page)))
-
-(defun make-project (name path templates pages)
+(defun make-project (name path templates pages )
   (make-instance 'project :name name :path path :templates templates :pages pages))
 
-(defun make-template (name)
-  (make-instance 'template :name name))
+(defun project (action name &key (path nil pathp))
+  (cond
+    ((eq action :create)
+     (format nil "Creating Project ~A: ~A" name path)
+     (ensure-directories-exist path)) ; @TODO: Save a project to the config to get the below working
 
-(defun make-page (name)
-  (make-instance 'page :name name))
+    ((eq action :delete)
+     (format nil "Deleting Project ~A" name path)
+     (uiop:delete-directory-tree "" :validate t)) ; @TODO: This doesn't work yet
+
+    (t
+     (error "Unrecognised action"))))
+
+(defun template (action project name &key (path nil pathp))
+  (format nil "~A Template ~A in ~A from ~A" action name project path))
+
+(defun page (action project name &key (path nil pathp) (template nil templatep))
+  (format nil "~A Page ~A in ~A from ~A to ~A" action name project template path))
