@@ -2,10 +2,16 @@
   :version "0.0.1"
   :author "nmunro"
   :license "BSD3-Clause"
-  :depends-on ("rove")
+  :depends-on ("rove"
+               "jonathan")
   :components ((:module "src"
                 :components
-                ((:file "main"))))
+                ((:file "config")
+                 (:file "utils")
+                 (:file "projects")
+                 (:file "templates")
+                 (:file "pages")
+                 (:file "main"))))
   :description "Generate a skeleton for modern project"
   :in-order-to ((test-op (test-op "lightning/tests"))))
 

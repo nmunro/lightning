@@ -4,46 +4,88 @@
 
 (in-package lightning)
 
-(defun strike (action project &key (path nil pathp) (template nil templatep) (page nil pagep))
+(defun strike/project (action &key name path to)
   (cond
-    ;; Create page from template
-    ((and pagep templatep)
-     (lightning/projects:page action project page :template template))
+    ((and (eq action :create) name path)
+     (lightning/projects:add-project name path))
 
-    ;; Create page from file
-    ((and pagep pathp)
-     (lightning/projects:page action project page :path path))
+    ((and (eq action :delete) name)
+     (lightning/projects:remove-project name))
 
-    ;; Create template from existing file
-    ((and templatep pathp)
-     (lightning/projects:template action project template :path path))
+    ((eq action :list)
+     (lightning/projects:list-projects))
 
-    ;; Create template
-    ((and templatep)
-     (lightning/projects:template action project template :path path))
+    ((eq action :get)
+     (lightning/projects:get-project name))
 
-    ;; Create page
-    ((and pagep)
-     (lightning/projects:page action project page))
+    ((and (eq action :rename) name to)
+     (lightning/projects:rename-project name to))
 
-    ;; Create project
-    ((and pathp)
-     (lightning/projects:project action project :path path))
+    ((and (eq action :change-path) name to)
+     (lightning/projects:change-path-project name to))
 
-    (project
-     (lightning/projects:project action project))
-
-    ;; error
     (t
      (error "Invalid arguments"))))
 
-(strike :create "nmunro" :path #p"~/dev/nmunro-tmp/") ; Remember to use a trailing '/'!
-(strike :create "nmunro" :template "base.html")
-(strike :create "nmunro" :template "base.html" :path #p"~/dev/nmunro/base.html")
-(strike :create "nmunro" :page "blog.html")
-(strike :create "nmunro" :page "blog.html" :template "base.html")
-(strike :create "nmunro" :page "blog.html" :path #p"~/dev/nmunro/tmp.html")
+(defun strike/template (action &key project name from)
+  (cond
+    ((and (eq action :create) name project from)
+     (lightning/templates:add-template project name :from from))
 
-(strike :delete "nmunro")
-(strike :delete "nmunro" :template "base.html")
-(strike :delete "nmunro" :page "blog.html")
+    ((and (eq action :create) name project)
+     (lightning/templates:add-template project name))
+
+    ((and (eq action :list) project)
+     (lightning/templates:list-templates project))
+
+    ((and (eq action :delete) project name)
+     (lightning/templates:remove-template project name))
+
+    ((and (eq action :get) project name)
+     (lightning/templates:get-template project name))
+
+    (t
+     (error "Invalid arguments"))))
+
+(defun strike/page (action &key project name from)
+  (cond
+    ((and (eq action :create) name project from)
+     (lightning/pages:add-page project name :from from))
+
+    ((and (eq action :create) name project)
+     (lightning/pages:add-page project name))
+
+    ((and (eq action :list) project)
+     (lightning/pages:list-pages project))
+
+    ((and (eq action :delete) project name)
+     (lightning/pages:remove-page project name))
+
+    ((and (eq action :get) project name)
+     (lightning/pages:get-page project name))
+
+    (t
+     (error "Invalid arguments"))))
+
+(strike/project :create :name "nmunro" :path #p"~/dev/nmunro/")
+(strike/project :create :name "nmunro2" :path #p"~/dev/nmunro/")
+(strike/project :get :name "nmunro")
+(strike/project :list)
+(strike/project :rename :name "nmunro" :to "nmunro-dev")
+(strike/project :rename :name "nmunro-dev" :to "nmunro")
+(strike/project :change-path :name "nmunro" :to "~/dev/nmunro-dev2/")
+(strike/project :change-path :name "nmunro" :to "~/dev/nmunro-dev/")
+(strike/project :delete :name "nmunro")
+
+(strike/template :create :project "nmunro" :name "base2.html")
+(strike/template :create :project "nmunro" :name "base3.html" :from #p"~/dev/nmunro/index.html")
+(strike/template :list :project "nmunro2")
+(strike/template :get :project "nmunro2" :name "base.html")
+(strike/template :delete :project "nmunro" :name "base2.html")
+
+(strike/page :create :project "nmunro" :name "blog.html")
+(strike/page :create :project "nmunro" :name "blog.html" :from "base.html")
+(strike/page :create :project "nmunro" :name "blog.html" :from #p"~/dev/nmunro/tmp.html")
+(strike/page :get :project "nmunro2" :name "blog.html")
+(strike/page :list :project "nmunro")
+(strike/page :delete :project "nmunro" :name "blog.html")

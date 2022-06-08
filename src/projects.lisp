@@ -1,50 +1,69 @@
 (defpackage lightning/projects
-  (:use :cl)
-  (:export #:project
-           #:template
-           #:page
-           #:name
-           #:path
-           #:pages
-           #:templates
-           #:make-project))
+    (:use :cl)
+    (:export #:add-project
+            #:get-project
+            #:list-projects
+            #:edit-project
+            #:remove-project
+            #:rename-project
+            #:change-path-project))
 
 (in-package lightning/projects)
 
-(defclass component ()
-  ((name      :initarg :name      :initform (error "Must provide a name") :reader name)))
+(defun make-project (name path &key templates pages)
+  `(:name ,name :path ,path))
 
-(defclass project (component)
-  ((path      :initarg :path      :initform (error "Must provide a path") :reader path)
-   (pages     :initarg :pages     :initform '()                           :reader pages)
-   (templates :initarg :templates :initform '()                           :reader templates)))
+(defun find-project (name project)
+  (string= (string-downcase name) (string-downcase (getf project :name))))
 
-(defclass template (component)
-  ())
+(defun get-project (name &key config)
+  (let ((config (or config (lightning/config:load-config))))
+    (find name (getf config :projects) :test #'find-project)))
 
-(defclass page (component)
-  ())
-
-(defun make-project (name path templates pages )
-  (make-instance 'project :name name :path path :templates templates :pages pages))
-
-(defun project (action name &key (path nil pathp))
+(defun add-project (name path)
   (let ((config (lightning/config:load-config)))
-    (cond
-      ((eq action :create)
-       (format nil "Creating Project ~A: ~A" name path)
-       (lightning/config:add-project (make-project name path '() '()) config)
-       (ensure-directories-exist path)) ; @TODO: Save a project to the config to get the below working
+    (if (find name (getf config :projects) :test #'find-project)
+        (error (format nil "Project \"~A\" already exists" name))
+        (let ((project (make-project name (uiop:native-namestring path))))
+            (push project (getf config :projects))
+            (lightning/config:save-config config)
 
-      ((eq action :delete)
-       (format nil "Deleting Project ~A" name path)
-       (uiop:delete-directory-tree "" :validate t)) ; @TODO: This doesn't work yet
+            ; Create directories
+            (ensure-directories-exist path)
+            (ensure-directories-exist (merge-pathnames "templates/" path))
+            (ensure-directories-exist (merge-pathnames "pages/" path))
 
-      (t
-       (error "Unrecognised action")))))
+            ; Create an index.html file
+            (with-open-file (index (merge-pathnames "index.html" path) :direction :output :if-exists :supersede :if-does-not-exist :create)
+                (format index "<html>~%")
+                (format index "    <head><title>Index</title></head>~%")
+                (format index "    <body>~%")
+                (format index "        <h1>Index</h1>~%")
+                (format index "    </body>~%")
+                (format index "</html>~%"))))))
 
-(defun template (action project name &key (path nil pathp))
-  (format nil "~A Template ~A in ~A from ~A" action name project path))
+(defun list-projects ()
+  (let ((config (lightning/config:load-config)))
+    (loop for project in (getf config :projects) collect (getf project :name))))
 
-(defun page (action project name &key (path nil pathp) (template nil templatep))
-  (format nil "~A Page ~A in ~A from ~A to ~A" action name project template path))
+(defun remove-project (name)
+  (let ((config (lightning/config:load-config)))
+    (if (find name (getf config :projects) :test #'find-project)
+        (let* ((project (get-project name :config config))
+               (path (lightning/utils:read-path (getf project :path))))
+            (uiop:delete-directory-tree path :validate t)
+            (setf (getf config :projects) (remove name (getf config :projects) :test #'find-project))
+            (lightning/config:save-config config))
+        (error (format nil "Project \"~A\" does not exist" name)))))
+
+(defun rename-project (name to)
+  (let* ((config (lightning/config:load-config))
+         (project (lightning/projects:get-project name :config config)))
+    (setf (getf project :name) to)
+    (lightning/config:save-config config)))
+
+(defun change-path-project (name to)
+  (let* ((config (lightning/config:load-config))
+         (project (lightning/projects:get-project name :config config)))
+    (setf (getf project :path) to)
+    (lightning/config:save-config config)))
