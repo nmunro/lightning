@@ -1,11 +1,28 @@
 (defpackage lightning/templates
   (:use :cl)
-  (:export #:add-template
-           #:get-template
-           #:list-templates
-           #:remove-template))
+  (:export #:make))
 
 (in-package lightning/templates)
+
+(defun make (action &key project name from)
+  (cond
+    ((and (eq action :create) name project from)
+     (add-template project name :from from))
+
+    ((and (eq action :create) name project)
+     (add-template project name))
+
+    ((and (eq action :list) project)
+     (list-templates project))
+
+    ((and (eq action :delete) project name)
+     (remove-template project name))
+
+    ((and (eq action :get) project name)
+     (get-template project name))
+
+    (t
+     (error "Invalid arguments"))))
 
 (defun add-template (project name &key from)
   (let ((project (lightning/projects:get-project project)))

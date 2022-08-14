@@ -1,14 +1,36 @@
 (defpackage lightning/projects
-    (:use :cl)
-    (:export #:add-project
-            #:get-project
-            #:list-projects
-            #:edit-project
-            #:remove-project
-            #:rename-project
-            #:change-path-project))
+  (:use :cl)
+  (:export #:make
+           #:get-project))
 
 (in-package lightning/projects)
+
+(defclass project ()
+  ((name :initarg :name :initform (error "Must provide a name") :reader name)
+   (path :initarg :path :initform (error "Must provide a path") :reader path)))
+
+(defun make (action &key name path to)
+  (cond
+    ((and (eq action :create) name path)
+     (add-project name path))
+
+    ((and (eq action :delete) name)
+     (remove-project name))
+
+    ((eq action :list)
+     (list-projects))
+
+    ((eq action :get)
+     (get-project name))
+
+    ((and (eq action :rename) name to)
+     (rename-project name to))
+
+    ((and (eq action :change-path) name to)
+     (change-path-project name to))
+
+    (t
+     (error "Invalid arguments"))))
 
 (defun make-project (name path &key templates pages)
   `(:name ,name :path ,path))
@@ -58,12 +80,12 @@
 
 (defun rename-project (name to)
   (let* ((config (lightning/config:load-config))
-         (project (lightning/projects:get-project name :config config)))
+         (project (get-project name :config config)))
     (setf (getf project :name) to)
     (lightning/config:save-config config)))
 
 (defun change-path-project (name to)
   (let* ((config (lightning/config:load-config))
-         (project (lightning/projects:get-project name :config config)))
+         (project (get-project name :config config)))
     (setf (getf project :path) to)
     (lightning/config:save-config config)))

@@ -1,11 +1,28 @@
 (defpackage lightning/pages
   (:use :cl)
-  (:export #:add-page
-           #:get-page
-           #:list-pages
-           #:remove-page))
+  (:export #:make))
 
 (in-package lightning/pages)
+
+(defun make (action &key project name from)
+  (cond
+    ((and (eq action :create) name project from)
+     (add-page project name :from from))
+
+    ((and (eq action :create) name project)
+     (add-page project name))
+
+    ((and (eq action :list) project)
+     (list-pages project))
+
+    ((and (eq action :delete) project name)
+     (remove-page project name))
+
+    ((and (eq action :get) project name)
+     (get-page project name))
+
+    (t
+     (error "Invalid arguments"))))
 
 (defun add-page (project name &key from)
   (let ((project (lightning/projects:get-project project)))
